@@ -6,6 +6,7 @@ import one.digitalinnovation.beerstock.entity.Beer;
 import one.digitalinnovation.beerstock.exception.BeerAlreadyRegisteredException;
 import one.digitalinnovation.beerstock.exception.BeerNotFoundException;
 import one.digitalinnovation.beerstock.exception.BeerStockExceededException;
+import one.digitalinnovation.beerstock.exception.BeerStockMinorZeroException;
 import one.digitalinnovation.beerstock.mapper.BeerMapper;
 import one.digitalinnovation.beerstock.repository.BeerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,12 +63,24 @@ public class BeerService {
 
     public BeerDTO increment(Long id, int quantityToIncrement) throws BeerNotFoundException, BeerStockExceededException {
         Beer beerToIncrementStock = verifyIfExists(id);
+        int maxCapacity=beerToIncrementStock.getMax();
         int quantityAfterIncrement = quantityToIncrement + beerToIncrementStock.getQuantity();
         if (quantityAfterIncrement <= beerToIncrementStock.getMax()) {
             beerToIncrementStock.setQuantity(beerToIncrementStock.getQuantity() + quantityToIncrement);
             Beer incrementedBeerStock = beerRepository.save(beerToIncrementStock);
             return beerMapper.toDTO(incrementedBeerStock);
         }
-        throw new BeerStockExceededException(id, quantityToIncrement);
+        throw new BeerStockExceededException(id, quantityToIncrement,maxCapacity);
+    }
+
+    public BeerDTO decrement(Long id, int quantityToDecrement) throws BeerNotFoundException, BeerStockMinorZeroException {
+        Beer beerToIncrementStock = verifyIfExists(id);
+        int quantityAfterDecrement = quantityToDecrement + beerToIncrementStock.getQuantity();
+        if (quantityAfterDecrement >=0) {
+            beerToIncrementStock.setQuantity(beerToIncrementStock.getQuantity() - quantityToDecrement);
+            Beer incrementedBeerStock = beerRepository.save(beerToIncrementStock);
+            return beerMapper.toDTO(incrementedBeerStock);
+        }
+        throw new BeerStockMinorZeroException(id, quantityToDecrement);
     }
 }
